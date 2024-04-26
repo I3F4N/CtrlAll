@@ -1,127 +1,100 @@
-const loginForm = document.getElementById('loginForm');
-loginForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+// Fetch parts data from the server
+async function loadTableData() {
+  try {
+    const response = await fetch('/api/parts');
+    const parts = await response.json();
 
-  // Perform login logic here
-  // ...
+    const table = dataTable.getElementsByTagName('tbody')[0];
 
-  // Redirect to the inventory page or show an error message
-});
+    // Clear existing table data
+    while (table.rows.length > 0) {
+      table.deleteRow(0);
+    }
 
-// Register form submission
-const registerForm = document.getElementById('registerForm');
-registerForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const username = document.getElementById('username').value;
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
+    // Populate table with parts data
+    parts.forEach((part) => {
+      const newRow = table.insertRow();
+      const nameCell = newRow.insertCell();
+      nameCell.textContent = part.name;
+      const descriptionCell = newRow.insertCell();
+      descriptionCell.textContent = part.description;
+      const priceCell = newRow.insertCell();
+      priceCell.textContent = part.price;
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
 
-  // Perform registration logic here
-  // ...
-
-  // Redirect to the login page or show a success message
-});
-
-// Inventory table functionality
-const tableSelect = document.getElementById('tableSelect');
-const dataTable = document.getElementById('dataTable');
-const addRowBtn = document.getElementById('addRowBtn');
-const deleteRowBtn = document.getElementById('deleteRowBtn');
-
-// Load the initial table data
-loadTableData();
-
-// Table select event listener
-tableSelect.addEventListener('change', () => {
-  loadTableData();
-});
-addRowBtn.addEventListener('click', () => {
+// Add a new part
+addRowBtn.addEventListener('click', async () => {
   const table = dataTable.getElementsByTagName('tbody')[0];
   const newRow = table.insertRow();
-  const selectedTable = tableSelect.value;
 
-  // Dynamically create input fields based on the selected table
-  switch (selectedTable) {
-    case 'parts':
-      const partNameCell = newRow.insertCell();
-      const partNameInput = document.createElement('input');
-      partNameInput.type = 'text';
-      partNameCell.appendChild(partNameInput);
+  const nameCell = newRow.insertCell();
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameCell.appendChild(nameInput);
 
-      const partDescriptionCell = newRow.insertCell();
-      const partDescriptionInput = document.createElement('input');
-      partDescriptionInput.type = 'text';
-      partDescriptionCell.appendChild(partDescriptionInput);
+  const descriptionCell = newRow.insertCell();
+  const descriptionInput = document.createElement('input');
+  descriptionInput.type = 'text';
+  descriptionCell.appendChild(descriptionInput);
 
-      const partPriceCell = newRow.insertCell();
-      const partPriceInput = document.createElement('input');
-      partPriceInput.type = 'number';
-      partPriceCell.appendChild(partPriceInput);
-      break;
+  const priceCell = newRow.insertCell();
+  const priceInput = document.createElement('input');
+  priceInput.type = 'number';
+  priceCell.appendChild(priceInput);
 
-    case 'vehicles':
-      // Add input fields for vehicles table
-      break;
+  const saveCell = newRow.insertCell();
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', async () => {
+    const name = nameInput.value;
+    const description = descriptionInput.value;
+    const price = priceInput.value;
 
-    case 'customers':
-      // Add input fields for customers table
-      break;
+    try {
+      const response = await fetch('/api/parts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, description, price }),
+      });
 
-    // Add cases for other tables
-  }
+      const newPart = await response.json();
+      console.log('New part:', newPart);
+      loadTableData();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+  saveCell.appendChild(saveBtn);
 });
 
-// Delete row event listener
-deleteRowBtn.addEventListener('click', () => {
+// Delete a part
+deleteRowBtn.addEventListener('click', async () => {
   const table = dataTable.getElementsByTagName('tbody')[0];
   const rowCount = table.rows.length;
 
   if (rowCount > 0) {
     const lastRow = table.rows[rowCount - 1];
-    table.deleteRow(rowCount - 1);
+    const partId = lastRow.cells[0].textContent;
+
+    try {
+      const response = await fetch(`/api/parts/${partId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        table.deleteRow(rowCount - 1);
+      } else {
+        const error = await response.json();
+        console.error(error.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 });
-
-// Function to load table data
-function loadTableData() {
-  const selectedTable = tableSelect.value;
-  const table = dataTable.getElementsByTagName('tbody')[0];
-
-  // Clear existing table data
-  while (table.rows.length > 0) {
-    table.deleteRow(0);
-  }
-
-  // Fetch data from the server or database based on the selected table
-  // and populate the table rows dynamically
-
-  // Example data for parts table
-  if (selectedTable === 'parts') {
-    const headers = ['Part Name', 'Description', 'Price'];
-    const data = [
-      ['Oil Filter', 'Automotive oil filter', 9.99],
-      ['Brake Pads', 'Front brake pads', 29.99],
-      ['Spark Plugs', 'Set of 4 spark plugs', 14.99],
-    ];
-
-    // Create table headers
-    const headerRow = table.insertRow();
-    headers.forEach((header) => {
-      const th = document.createElement('th');
-      th.textContent = header;
-      headerRow.appendChild(th);
-    });
-
-    // Create table rows
-    data.forEach((row) => {
-      const newRow = table.insertRow();
-      row.forEach((cell) => {
-        const newCell = newRow.insertCell();
-        newCell.textContent = cell;
-      });
-    });
-  }
-}

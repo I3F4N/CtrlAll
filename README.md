@@ -1,0 +1,2 @@
+# CtrlAll
+Odoo Replacement
